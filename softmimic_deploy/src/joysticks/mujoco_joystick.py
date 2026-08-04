@@ -15,6 +15,10 @@ SoftMimic controls (focus the MuJoCo viewer)
   Numpad 9 / 3     Increase / decrease height command
   Numpad 5         Zero all motion commands
 
+  Note: Numpad motion commands require a policy exported with active
+        velocity-command observations. The bundled stand/walk presets use
+        recorded references and cannot be steered.
+
 Mouse perturbations (while the policy is running)
   Double left-click            Select a robot body
   Ctrl + right-drag            Apply force in the vertical plane

@@ -76,6 +76,9 @@ softmimic_release_dev/
 
 ### 3.1 MuJoCo simulation
 
+For preset commands, shell shortcuts, the startup sequence, and mouse-force
+controls, see [MuJoCo Quickstart](MUJOCO_QUICKSTART.md).
+
 ```bash
 python softmimic_deploy/src/deploy_policy_interface.py \
   --interface mujoco \
@@ -90,10 +93,16 @@ Controls (`mujoco` viewer):
 - `F9`: start/resume the policy,
 - `F10`: stop the policy and enter damping mode,
 - `F11`: recalibrate while the policy is running,
-- Numpad `8`/`2`: increase/decrease the forward command,
-- Numpad `4`/`6`: increase the left/right turn command,
-- Numpad `9`/`3`: increase/decrease the height command,
-- Numpad `5`: zero all motion commands.
+- Numpad `8`/`2`: increase/decrease the forward command (only for policies
+  exported with velocity-command observations),
+- Numpad `4`/`6`: increase the left/right turn command (only for policies
+  exported with velocity-command observations),
+- Numpad `9`/`3`: increase/decrease the height command when supported,
+- Numpad `5`: zero all command values.
+
+The included `StaticStand` and `GMTWalkStand` policies have
+`velocity_commands: null`; they cannot be steered with the numpad. The walk
+preset follows the position, direction, and steps recorded in `walk.csv`.
 
 Mouse perturbations while the policy is running:
 
