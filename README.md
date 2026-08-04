@@ -77,7 +77,7 @@ softmimic_release_dev/
 ### 3.1 MuJoCo simulation
 
 For preset commands, shell shortcuts, the startup sequence, and mouse-force
-controls, see [MuJoCo Quickstart](MUJOCO_QUICKSTART.md).
+controls, see [MuJoCo Quickstart](QUICKSTART.md).
 
 ```bash
 python softmimic_deploy/src/deploy_policy_interface.py \
