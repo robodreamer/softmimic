@@ -86,10 +86,24 @@ python softmimic_deploy/src/deploy_policy_interface.py \
 
 Controls (`mujoco` viewer):
 
-- `L`: calibrate to the initial pose,
-- `X`: start the policy,
-- `Y`: enter damping mode,
-- Arrow keys/PageUp/PageDown: joystick emulation.
+- `F8`: initialize/calibrate the pose,
+- `F9`: start/resume the policy,
+- `F10`: stop the policy and enter damping mode,
+- `F11`: recalibrate while the policy is running,
+- Numpad `8`/`2`: increase/decrease the forward command,
+- Numpad `4`/`6`: increase the left/right turn command,
+- Numpad `9`/`3`: increase/decrease the height command,
+- Numpad `5`: zero all motion commands.
+
+Mouse perturbations while the policy is running:
+
+- Double left-click a robot body to select it,
+- `Ctrl` + right-drag to apply force in the vertical plane,
+- `Ctrl` + `Shift` + right-drag to apply force in the horizontal plane,
+- `Ctrl` + left-drag to apply torque.
+
+The same keymap is printed in the console when the MuJoCo viewer opens. These
+bindings avoid MuJoCo's built-in viewer shortcuts.
 
 The CLI accepts any motion CSV under `datasets/motions_csv/` or `SOFTMIMIC_DATA_ROOT`. Paths outside that tree can be passed explicitly.
 
@@ -201,4 +215,3 @@ python scripts/rsl_rl/test.py \
 - Follow all safety guidelines given by Unitree.
 - Ensure that only one instance of the deployment script runs on the robot at a time.
 - This is research code provided as-is to facilitate future research -- the user assumes all liability.
-

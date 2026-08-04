@@ -278,7 +278,6 @@ class RobotController:
                 demo_start_time=demo_start_time,
                 # upper_demo_only=True,
             )
-        input(sensors)
         self.sensors = [
             wholeexo_sensor if sensor == WholeexoSensor else
             sensor(self.robot, scale=scale, wholeexo_sensor=wholeexo_sensor) if sensor in REFERENCE_SENSORS else
@@ -632,7 +631,7 @@ class RobotController:
     #############
 
     def run(self, time_limit_s=None, callback=None):
-        print("Waiting for L1 button press to assume initial pose...")
+        print("Waiting for the initialize/calibrate command...")
         self.pose_initialised = False
         self.iteration_count = 0
         start_time = time.time()
@@ -642,7 +641,7 @@ class RobotController:
             if not self.pose_initialised:
                 buttons = self.robot.get_buttons()
                 if buttons[1][1] == 1:
-                    print("L1 button detected. Assuming initial pose...")
+                    print("Initialize/calibrate command detected. Assuming initial pose...")
                     if self.interface_type in ["mujoco"] and not self.robot.fix_base:
                         self.robot.lock_base()
                     self.initialize_pose()
@@ -650,7 +649,7 @@ class RobotController:
                         self.robot.unlock_base()
                     self.pose_initialised = True
                 elif buttons[11][1] == 1:
-                    print("Y button detected. Entering damping mode...")
+                    print("Stop command detected. Entering damping mode...")
                     self.robot.damping_mode()
                 else:
                     #print("L1 not detected")
@@ -668,7 +667,7 @@ class RobotController:
                     print("L2 button detected. Applying sine wave motion...")
                     self.apply_sine_wave()
                 elif buttons[10][1] == 1:
-                    print("X button detected. Deploying policy...")
+                    print("Start/resume command detected. Deploying policy...")
 
                     loop_start_time = time.time()
                     if self.demo_terminal_frame_mapping is not None:
@@ -707,11 +706,11 @@ class RobotController:
                         buttons = self.robot.get_buttons()
 
                         if buttons[11][1] == 1:
-                            print("Y button detected. Stopping policy execution...")
+                            print("Stop command detected. Stopping policy execution...")
                             self.robot.damping_mode()
                             break
                         elif buttons[1][1] == 1:
-                            print("L1 button detected. Stopping policy execution and calibrating...")
+                            print("Initialize/calibrate command detected. Stopping policy execution...")
                             
                             # reset the motion library to the start
                             # MANUAL TRANSITION
@@ -735,13 +734,13 @@ class RobotController:
                                 self.initialize_pose()
                                 break
                         elif buttons[8][1] == 1:
-                            print("A button detected. calibrating...")
+                            print("Recalibrate command detected. Calibrating...")
                             self.wholeexo_sensor.reset_motion_time(0)
                             self.was_reset = False
                             self.initialize_pose()
                             break
                         elif buttons[10][1] == 1:
-                            print("X button detected. Deploying policy...")
+                            print("Start/resume command detected. Resuming policy reference...")
                             if self.demo_terminal_frame_mapping is not None:
                                 if self.wholeexo_sensor.motion_count > len(self.demo_terminal_frame_mapping) / 30.0 / self.robot.robot_configuration.dt - 10:
                                     self.wholeexo_sensor.reset_motion_time(0)

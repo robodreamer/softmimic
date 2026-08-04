@@ -186,6 +186,7 @@ class MujocoInterface(BaseInterface):
             self.viewer = mujoco.viewer.launch_passive(self.model, self.data, key_callback=self.joystick.key_callback)
             self.viewer._hide_overlay = True
             self.viewer._render_every_frame = True
+            print(f"\n{'=' * 64}\n{self.joystick.KEYMAP}\n{'=' * 64}\n")
         else:
             self.viewer=None
 

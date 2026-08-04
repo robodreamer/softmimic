@@ -23,7 +23,11 @@ BASE_REQUIREMENTS = [
 ]
 
 EXTRAS = {
-    "mujoco": ["mujoco>=3.1"],
+    "mujoco": [
+        "mujoco>=3.1",
+        "imageio>=2.31",
+        "imageio-ffmpeg>=0.4.9",
+    ],
     "lcm": ["lcm>=1.5.0"],
     "augmentation": ["mink>=0.3"],
     "eval": ["seaborn>=0.12"],

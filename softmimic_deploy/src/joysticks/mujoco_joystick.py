@@ -1,7 +1,29 @@
-import time
+import glfw
 import numpy as np
 
+
 class MujocoJoystick:
+    KEYMAP = """
+SoftMimic controls (focus the MuJoCo viewer)
+  F8               Initialize / calibrate pose
+  F9               Start / resume policy
+  F10              Stop policy / damping mode
+  F11              Recalibrate while running
+
+  Numpad 8 / 2     Increase / decrease forward command
+  Numpad 4 / 6     Increase left / right turn command
+  Numpad 9 / 3     Increase / decrease height command
+  Numpad 5         Zero all motion commands
+
+Mouse perturbations (while the policy is running)
+  Double left-click            Select a robot body
+  Ctrl + right-drag            Apply force in the vertical plane
+  Ctrl + Shift + right-drag    Apply force in the horizontal plane
+  Ctrl + left-drag             Apply torque
+""".strip()
+
+    COMMAND_STEP = 0.2
+    HEIGHT_STEP = 0.1
     
     def __init__(self):
         self.mode = 0
@@ -34,54 +56,32 @@ class MujocoJoystick:
         self.right_stick_smooth = [0, 0]
     
     def key_callback(self, key):
-        """
-        Key callback function.
-        - window: the window that received the event
-        - key: the keyboard key that was pressed or released
-        - scancode: the system-specific scancode of the key
-        - action: GLFW_PRESS, GLFW_RELEASE or GLFW_REPEAT
-        - mods: bitfield describing which modifier keys were held down
-        """
-        print(key)
-        if key == 32: # SPACE
-            # self.right_lower_right_switch_pressed = 1 - self.right_lower_right_switch_pressed
-            # self.right_lower_right_switch = 1 - self.right_lower_right_switch
+        """Translate non-conflicting viewer keys into joystick inputs."""
+        if key == glfw.KEY_KP_5:
             self.left_stick[0] = 0
             self.left_stick[1] = 0
             self.right_stick[0] = 0
             self.right_stick[1] = 0
-        elif key == 265: # UP
-            self.left_stick[1] += 0.2
-        elif key == 264: # DOWN
-            self.left_stick[1] -= 0.2
-        elif key == 263: # LEFT
-            self.right_stick[0] -= 0.2
-        elif key == 262: # RIGHT
-            self.right_stick[0] += 0.2
-        elif key == 44: # ,
-            self.current_policy = 1
-        elif key == 46: # .
-            self.current_policy = 2
-        elif key == 266: # page up
-            self.right_stick[1] += 0.1
-        elif key == 267: # page down
-            self.right_stick[1] -= 0.1
-        # A button
-        elif key == 65:
+        elif key == glfw.KEY_KP_8:
+            self.left_stick[1] += self.COMMAND_STEP
+        elif key == glfw.KEY_KP_2:
+            self.left_stick[1] -= self.COMMAND_STEP
+        elif key == glfw.KEY_KP_4:
+            self.right_stick[0] -= self.COMMAND_STEP
+        elif key == glfw.KEY_KP_6:
+            self.right_stick[0] += self.COMMAND_STEP
+        elif key == glfw.KEY_KP_9:
+            self.right_stick[1] += self.HEIGHT_STEP
+        elif key == glfw.KEY_KP_3:
+            self.right_stick[1] -= self.HEIGHT_STEP
+        elif key == glfw.KEY_F11:
             self.a_button = 1
-        # B button
-        elif key == 66:
-            self.b_button = 1
-        # X button
-        elif key == 88:
+        elif key == glfw.KEY_F9:
             self.x_button = 1
-        # Y button
-        elif key == 89:
+        elif key == glfw.KEY_F10:
             self.y_button = 1
-        # L1 button
-        elif key == 76: # L
-            # self.left_upper_switch_pressed = 1 - self.left_upper_switch_pressed
-            self.left_upper_switch = 1 #- self.left_upper_switch
+        elif key == glfw.KEY_F8:
+            self.left_upper_switch = 1
     
     def update_stick(self, stick, x, y):
         if stick == 'left':
