@@ -35,38 +35,72 @@ The project is distributed under the MIT License (see `LICENSE`). Third-party co
 Code in `unitree_sdk2` for LCM interface comes from OpenHomie: https://github.com/InternRobotics/OpenHomie which is based on walk-these-ways: https://github.com/Improbable-AI/walk-these-ways
 
 This code depends on a number of open-source projects without which the system would not be possible:
+
 - IsaacLab: https://github.com/isaac-sim/IsaacLab
 - RSL-RL: https://github.com/leggedrobotics/rsl_rl
 - Mink: https://github.com/kevinzakka/mink
 - MuJoCo: https://github.com/google-deepmind/mujoco
 - unitree_sdk2: https://github.com/unitreerobotics/unitree_sdk2
 
+### Changes in this fork
 
+This fork keeps the original SoftMimic research code and adds deployment
+quality-of-life improvements:
+
+- a Python 3.12 pin and repository-local uv environment workflow,
+- complete MuJoCo rendering dependencies, including ImageIO and FFmpeg,
+- removal of an interactive debug pause during deployment startup,
+- MuJoCo-safe keyboard bindings with an instruction keymap in the console,
+- mouse-perturbation instructions for testing policy compliance,
+- one-command standing and recorded-walking presets,
+- sourceable `sm-stand` and `sm-walk` shell aliases,
+- focused tests for the MuJoCo keyboard mapping.
 
 ## 1. Installation <a name="installation"></a>
 
+Install [uv](https://docs.astral.sh/uv/) first, then clone this fork:
+
 ```bash
-git clone https://github.com/Improbable-AI/softmimic_release_dev.git
-cd softmimic_release_dev
-python3 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -e ".[all]"  # installs optional extras (mujoco, lcm, mink, seaborn)
+git clone git@github.com:robodreamer/softmimic.git
+cd softmimic
+
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python -e ".[all]"
 ```
 
-Use `pip install -e softmimic_gym[isaac]` if you intend to run Isaac-based training scripts.
+The checked-in `.python-version` keeps `uv run` on Python 3.12. The `all` extra
+installs MuJoCo, ImageIO/FFmpeg video support, LCM, Mink, evaluation tools, and
+development tools. You do not need to activate the environment when commands
+are launched through `uv run` or the preset scripts.
+
+To keep the original repository available for updates:
+
+```bash
+git remote add upstream git@github.com:Improbable-AI/softmimic.git
+git remote -v
+```
+
+The intended remote convention is:
+
+- `origin`: `git@github.com:robodreamer/softmimic.git`
+- `upstream`: `git@github.com:Improbable-AI/softmimic.git`
+
+Use `uv pip install --python .venv/bin/python -e "softmimic_gym[isaac]"` if
+you intend to run Isaac-based training scripts.
 
 ---
 
 ## 2. Repository Layout <a name="layout"></a>
 
 ```
-softmimic_release_dev/
+softmimic/
 ├── compliant_motion_augmentation/   # Compliant motion augmentation pipeline
+├── datasets/motions_csv/             # Deployment motion references
 ├── pretrained_models/               # Exported policies (JIT + params)
-├── scripts/                         # RSL-RL training/eval helpers
+├── scripts/                         # Quick-run, deployment, and RSL-RL helpers
 ├── softmimic_deploy/                # Deployment interfaces, sensors, utils
 ├── softmimic_gym/                   # Isaac Lab extension + packaging
+├── QUICKSTART.md                    # MuJoCo presets and interaction guide
 └── third-party/unitree_sdk2/        # Unitree SDK source (for deployment)
 ```
 
@@ -79,8 +113,30 @@ softmimic_release_dev/
 For preset commands, shell shortcuts, the startup sequence, and mouse-force
 controls, see [MuJoCo Quickstart](QUICKSTART.md).
 
+The shortest way to launch the bundled policies is:
+
 ```bash
-python softmimic_deploy/src/deploy_policy_interface.py \
+./scripts/run_mujoco.sh stand
+./scripts/run_mujoco.sh walk
+```
+
+For optional commands that work from any directory:
+
+```bash
+source scripts/aliases.sh
+sm-stand
+sm-walk
+```
+
+| Preset | Exported policy | Motion | Keyboard steering |
+| --- | --- | --- | --- |
+| `stand` | StaticStand-SoftMimic | `stand.csv` | No |
+| `walk` | GMTWalkStand-SoftMimic | `walk.csv` | No; follows recorded direction and steps |
+
+The equivalent manual standing command is:
+
+```bash
+uv run python softmimic_deploy/src/deploy_policy_interface.py \
   --interface mujoco \
   --policy ../../pretrained_models/2025-09-26_03-54-58_StaticStand-SoftMimic/model_48000.jit \
   --motion_path stand.csv \
@@ -159,7 +215,8 @@ The CLI accepts any motion CSV under `datasets/motions_csv/` or `SOFTMIMIC_DATA_
      ```bash
      python softmimic_deploy/src/deploy_policy_interface.py \
        --interface lcm \
-       --policy ../../pretrained_models/2025-09-26_03-54-58_StaticStand-SoftMimic/model_48000.jit
+       --policy ../../pretrained_models/2025-09-26_03-54-58_StaticStand-SoftMimic/model_48000.jit \
+       --motion_path stand.csv
      ```
 
    - Button guide matches the physical remote (L1: initial pose, X: deploy, Y: e-stop/damping mode).
