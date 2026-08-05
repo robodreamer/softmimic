@@ -10,14 +10,17 @@ SoftMimic controls (focus the MuJoCo viewer)
   F10              Stop policy / damping mode
   F11              Recalibrate while running
 
-  Numpad 8 / 2     Increase / decrease forward command
-  Numpad 4 / 6     Increase left / right turn command
-  Numpad 9 / 3     Increase / decrease height command
-  Numpad 5         Zero all motion commands
+  8 / 2            Increase / decrease forward velocity offset
+  4 / 6            Increase left / right yaw-rate offset
+  3 / 1            Increase / decrease height command
+  9 / 7            Increase / decrease desired policy stiffness
+  5                Zero velocity and height commands
+  0                Reset stiffness to its default
 
-  Note: Numpad motion commands require a policy exported with active
-        velocity-command observations. The bundled stand/walk presets use
-        recorded references and cannot be steered.
+  The top number row and numeric keypad are both accepted.
+
+  Note: Steering offsets the recorded reference velocities. It is experimental
+        and is most useful with the bundled walk policy.
 
 Mouse perturbations (while the policy is running)
   Double left-click            Select a robot body
@@ -28,6 +31,16 @@ Mouse perturbations (while the policy is running)
 
     COMMAND_STEP = 0.2
     HEIGHT_STEP = 0.1
+    MIN_HEIGHT_OFFSET = -0.35
+    MAX_HEIGHT_OFFSET = 0.15
+    MIN_LINEAR_COMMAND = -0.8
+    MAX_LINEAR_COMMAND = 0.8
+    MIN_YAW_COMMAND = -1.0
+    MAX_YAW_COMMAND = 1.0
+    DEFAULT_STIFFNESS = 60.0
+    MIN_STIFFNESS = 40.0
+    MAX_STIFFNESS = 800.0
+    STIFFNESS_FACTOR = 1.25
     
     def __init__(self):
         self.mode = 0
@@ -48,6 +61,7 @@ Mouse perturbations (while the policy is running)
         self.right_lower_left_switch_pressed = 0
         self.right_lower_right_switch_pressed = 0
         self.current_policy = 1
+        self.stiffness = self.DEFAULT_STIFFNESS
         self.running = False
         self.run_thread = None
         self.root = None
@@ -61,31 +75,77 @@ Mouse perturbations (while the policy is running)
     
     def key_callback(self, key):
         """Translate non-conflicting viewer keys into joystick inputs."""
-        if key == glfw.KEY_KP_5:
+        command_changed = True
+        if key in (glfw.KEY_5, glfw.KEY_KP_5):
             self.left_stick[0] = 0
             self.left_stick[1] = 0
             self.right_stick[0] = 0
             self.right_stick[1] = 0
-        elif key == glfw.KEY_KP_8:
-            self.left_stick[1] += self.COMMAND_STEP
-        elif key == glfw.KEY_KP_2:
-            self.left_stick[1] -= self.COMMAND_STEP
-        elif key == glfw.KEY_KP_4:
-            self.right_stick[0] -= self.COMMAND_STEP
-        elif key == glfw.KEY_KP_6:
-            self.right_stick[0] += self.COMMAND_STEP
-        elif key == glfw.KEY_KP_9:
-            self.right_stick[1] += self.HEIGHT_STEP
-        elif key == glfw.KEY_KP_3:
-            self.right_stick[1] -= self.HEIGHT_STEP
+        elif key in (glfw.KEY_8, glfw.KEY_KP_8):
+            self.left_stick[1] = min(
+                self.left_stick[1] + self.COMMAND_STEP,
+                self.MAX_LINEAR_COMMAND,
+            )
+        elif key in (glfw.KEY_2, glfw.KEY_KP_2):
+            self.left_stick[1] = max(
+                self.left_stick[1] - self.COMMAND_STEP,
+                self.MIN_LINEAR_COMMAND,
+            )
+        elif key in (glfw.KEY_4, glfw.KEY_KP_4):
+            self.right_stick[0] = max(
+                self.right_stick[0] - self.COMMAND_STEP,
+                self.MIN_YAW_COMMAND,
+            )
+        elif key in (glfw.KEY_6, glfw.KEY_KP_6):
+            self.right_stick[0] = min(
+                self.right_stick[0] + self.COMMAND_STEP,
+                self.MAX_YAW_COMMAND,
+            )
+        elif key in (glfw.KEY_3, glfw.KEY_KP_3):
+            self.right_stick[1] = min(
+                self.right_stick[1] + self.HEIGHT_STEP,
+                self.MAX_HEIGHT_OFFSET,
+            )
+        elif key in (glfw.KEY_1, glfw.KEY_KP_1):
+            self.right_stick[1] = max(
+                self.right_stick[1] - self.HEIGHT_STEP,
+                self.MIN_HEIGHT_OFFSET,
+            )
+        elif key in (glfw.KEY_9, glfw.KEY_KP_9):
+            self.stiffness = min(
+                self.stiffness * self.STIFFNESS_FACTOR,
+                self.MAX_STIFFNESS,
+            )
+        elif key in (glfw.KEY_7, glfw.KEY_KP_7):
+            self.stiffness = max(
+                self.stiffness / self.STIFFNESS_FACTOR,
+                self.MIN_STIFFNESS,
+            )
+        elif key in (glfw.KEY_0, glfw.KEY_KP_0):
+            self.stiffness = self.DEFAULT_STIFFNESS
         elif key == glfw.KEY_F11:
             self.a_button = 1
+            command_changed = False
         elif key == glfw.KEY_F9:
             self.x_button = 1
+            command_changed = False
         elif key == glfw.KEY_F10:
             self.y_button = 1
+            command_changed = False
         elif key == glfw.KEY_F8:
             self.left_upper_switch = 1
+            command_changed = False
+        else:
+            command_changed = False
+
+        if command_changed:
+            print(
+                "[SoftMimic] "
+                f"forward_offset={self.left_stick[1]:+.2f} m/s, "
+                f"yaw_offset={self.right_stick[0]:+.2f} rad/s, "
+                f"height={self.right_stick[1] + 0.75:.2f} m, "
+                f"stiffness={self.stiffness:.1f}"
+            )
     
     def update_stick(self, stick, x, y):
         if stick == 'left':
@@ -126,3 +186,9 @@ Mouse perturbations (while the policy is running)
 
     def get_current_policy(self):
         return self.current_policy
+
+    def get_stiffness(self):
+        return self.stiffness
+
+    def get_rotational_stiffness(self):
+        return self.stiffness / self.DEFAULT_STIFFNESS

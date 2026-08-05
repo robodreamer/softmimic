@@ -1,5 +1,6 @@
 from softmimic_deploy.src.sensors.base_sensor import BaseSensor
 
+
 class ReferenceAngVelSensor(BaseSensor):
 
     dim = 1
@@ -11,6 +12,10 @@ class ReferenceAngVelSensor(BaseSensor):
         self.wholeexo_sensor = wholeexo_sensor
 
     def get_data(self):
-        # Get the reference gravity vector from the wholeexo sensor
         reference_root_ang_vel = self.wholeexo_sensor.root_ang_vel[2:3]
+        if hasattr(self.interface, "get_reference_velocity_offset"):
+            yaw_offset = reference_root_ang_vel.new_tensor(
+                self.interface.get_reference_velocity_offset()[2:3]
+            )
+            reference_root_ang_vel = reference_root_ang_vel + yaw_offset
         return reference_root_ang_vel * self.scale

@@ -1,12 +1,16 @@
-import numpy as np
-import os
 import time
+
 import mujoco
+import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 from softmimic_deploy.src.interfaces.base_interface import BaseInterface
-from softmimic_deploy.src.utils.math_utils import get_rotation_matrix_from_rpy, get_rpy_from_quaternion, get_rotation_matrix_from_quaternion
-from softmimic_deploy.src.utils.zmq_utils import PosePublisher
+from softmimic_deploy.src.utils.math_utils import (
+    get_rotation_matrix_from_quaternion,
+    get_rotation_matrix_from_rpy,
+    get_rpy_from_quaternion,
+)
+
 
 class MujocoInterface(BaseInterface):
     def __init__(self, robot_configuration, cfg, headless=False, task_name=None):
@@ -88,8 +92,6 @@ class MujocoInterface(BaseInterface):
         import mujoco
         import mujoco.viewer
         # Load MuJoCo model
-        pwd = os.path.dirname(os.path.realpath(__file__))
-        
         self.fix_base = fix_base
         self.with_table_and_object = (self.task_name is not None) and ("Manip" in self.task_name)
         if self.with_table_and_object:
@@ -670,10 +672,13 @@ class MujocoInterface(BaseInterface):
         return self.joystick.get_command()[3] + 0.75
     
     def get_stiffness_commands(self):
-        min_stiffness, max_stiffness = 40.0, 800.0
-        log_stiffness_commands = min(max(np.log(40.0) + (np.log(800.0) - np.log(40.0)) * (self.joystick.get_command()[3] + 1) / 2, np.log(min_stiffness)), np.log(max_stiffness))
-        stiffness_commands = np.exp(log_stiffness_commands)
-        return stiffness_commands
+        return self.joystick.get_stiffness()
+
+    def get_rotational_stiffness_commands(self):
+        return self.joystick.get_rotational_stiffness()
+
+    def get_reference_velocity_offset(self):
+        return np.asarray(self.joystick.get_command()[0:3], dtype=np.float32)
     
     def get_pitch_commands(self):
         return 0.0

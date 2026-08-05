@@ -51,6 +51,7 @@ quality-of-life improvements:
 - complete MuJoCo rendering dependencies, including ImageIO and FFmpeg,
 - removal of an interactive debug pause during deployment startup,
 - MuJoCo-safe keyboard bindings with an instruction keymap in the console,
+- experimental keyboard reference-velocity steering and desired-stiffness input,
 - mouse-perturbation instructions for testing policy compliance,
 - one-command standing and recorded-walking presets,
 - sourceable `sm-stand` and `sm-walk` shell aliases,
@@ -128,10 +129,15 @@ sm-stand
 sm-walk
 ```
 
+`source` is a Bash built-in and must run directly in the current shell. Do not
+prefix it with `uv run`; `uv run source scripts/aliases.sh` will fail because
+there is no standalone `source` executable. The `sm-*` runners invoke uv
+internally.
+
 | Preset | Exported policy | Motion | Keyboard steering |
 | --- | --- | --- | --- |
-| `stand` | StaticStand-SoftMimic | `stand.csv` | No |
-| `walk` | GMTWalkStand-SoftMimic | `walk.csv` | No; follows recorded direction and steps |
+| `stand` | StaticStand-SoftMimic | `stand.csv` | No reliable locomotion; standing reference only |
+| `walk` | GMTWalkStand-SoftMimic | `walk.csv` | Experimental reference velocity/yaw offsets |
 
 The equivalent manual standing command is:
 
@@ -149,16 +155,24 @@ Controls (`mujoco` viewer):
 - `F9`: start/resume the policy,
 - `F10`: stop the policy and enter damping mode,
 - `F11`: recalibrate while the policy is running,
-- Numpad `8`/`2`: increase/decrease the forward command (only for policies
-  exported with velocity-command observations),
-- Numpad `4`/`6`: increase the left/right turn command (only for policies
-  exported with velocity-command observations),
-- Numpad `9`/`3`: increase/decrease the height command when supported,
-- Numpad `5`: zero all command values.
+- `8`/`2`: increase/decrease the forward reference-velocity offset,
+- `4`/`6`: increase the left/right reference yaw-rate offset,
+- `3`/`1`: increase/decrease the height command,
+- `9`/`7`: increase/decrease desired policy stiffness,
+- `5`: zero velocity and height commands,
+- `0`: reset desired stiffness to `60`.
 
-The included `StaticStand` and `GMTWalkStand` policies have
-`velocity_commands: null`; they cannot be steered with the numpad. The walk
-preset follows the position, direction, and steps recorded in `walk.csv`.
+Both the top number row and numeric keypad are accepted. Each change is printed
+in the console. Because the bundled policies were exported with
+`velocity_commands: null`, steering is implemented by offsetting their existing
+current and future reference-velocity observations without changing the JIT
+input dimensions. This is experimental: the walk policy still follows the
+joint poses and step timing recorded in `walk.csv`, so large offsets may be
+unstable and will not behave like a policy trained for joystick locomotion.
+
+The stiffness keys update the desired linear and rotational stiffness
+observations consumed by the policy. They do not directly rewrite MuJoCo's
+fixed low-level joint PD gains.
 
 Mouse perturbations while the policy is running:
 

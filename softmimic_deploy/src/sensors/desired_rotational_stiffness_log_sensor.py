@@ -1,5 +1,7 @@
-from softmimic_deploy.src.sensors.base_sensor import BaseSensor
 import numpy as np
+
+from softmimic_deploy.src.sensors.base_sensor import BaseSensor
+
 
 class DesiredRotationalStiffnessLogSensor(BaseSensor):
 
@@ -12,5 +14,8 @@ class DesiredRotationalStiffnessLogSensor(BaseSensor):
         self.scale = 1.
 
     def get_data(self):
-        # HARDCODED FOR NOW
-        return np.log(np.array([1.0])) * self.scale
+        if type(self.interface).__module__ == "softmimic_deploy.src.interfaces.mujoco_interface":
+            stiffness = self.interface.get_rotational_stiffness_commands()
+        else:
+            stiffness = 1.0
+        return np.log(np.array([stiffness])) * self.scale

@@ -36,6 +36,10 @@ Load the aliases in the current Bash session:
 source scripts/aliases.sh
 ```
 
+Run `source` directly in Bash—do not use `uv run source scripts/aliases.sh`.
+`source` is a shell built-in rather than an executable, and the preset runners
+already invoke uv internally.
+
 Then run either preset from any directory:
 
 ```bash
@@ -71,13 +75,24 @@ The `stand` preset uses `StaticStand-SoftMimic` with `stand.csv`. It is intended
 to hold a standing pose and respond to physical perturbations; it does not
 produce walking steps.
 
-The `walk` preset uses `GMTWalkStand-SoftMimic` with `walk.csv`. It replays the
-recorded walking reference, including its step timing and direction. This
-policy also has `velocity_commands: null`, so numpad commands do not steer it.
+The `walk` preset uses `GMTWalkStand-SoftMimic` with `walk.csv`. It follows the
+recorded joint poses and step timing. Number keys apply experimental forward
+velocity and yaw-rate offsets to the current and future reference observations.
+This preserves the exported policy's input dimensions, but it is not equivalent
+to a policy trained for joystick locomotion and large offsets may be unstable.
 
-Numpad movement bindings are retained for compatible policies exported with
-active velocity-command observations. Use the numeric keypad with Num Lock
-enabled; the top-row number keys are not mapped.
+The top number row and numeric keypad use the same bindings:
+
+- `8`/`2`: increase/decrease forward velocity offset,
+- `4`/`6`: increase left/right yaw-rate offset,
+- `3`/`1`: increase/decrease height,
+- `9`/`7`: increase/decrease desired policy stiffness,
+- `5`: zero velocity and height commands,
+- `0`: reset desired stiffness to `60`.
+
+The console prints the resulting values after each command. Desired stiffness
+is provided to the policy as its existing linear and rotational stiffness
+observations; it does not directly change the fixed low-level MuJoCo PD gains.
 
 ## Applying forces with the mouse
 
